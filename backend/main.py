@@ -1,6 +1,5 @@
 import json
 from datetime import date, datetime
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +13,7 @@ from backend.text_utils import truncate
 from backend.update_state import get_state as _get_state
 from backend.update_state import start_update as _start_update
 from backend.digest import generate_digest as _generate_digest
+from backend.runtime_paths import frontend_dir
 
 app = FastAPI(title="WP TLDR Explorer")
 
@@ -289,6 +289,6 @@ def expand_article(article_id: int):
 
 # ── static frontend ──────────────────────────────────────────────────
 
-static_dir = Path(__file__).resolve().parents[1] / "frontend"
+static_dir = frontend_dir()
 if static_dir.exists():
     app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="frontend")

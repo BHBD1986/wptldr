@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
 from dotenv import dotenv_values
 
 env_file = Path(__file__).resolve().parents[1] / ".env"
-_env = dotenv_values(env_file) if env_file.exists() else {}
+_file_env = dotenv_values(env_file) if env_file.exists() else {}
 
 
 class Settings:
@@ -23,7 +24,9 @@ class Settings:
         for key in dir(self):
             if key.startswith("_") or callable(getattr(self, key)):
                 continue
-            env_val = _env.get(key)
+            env_val = os.environ.get(key)
+            if env_val is None:
+                env_val = _file_env.get(key)
             if env_val is None:
                 continue
             annotation = hints.get(key)
