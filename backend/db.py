@@ -3,6 +3,8 @@ from pathlib import Path
 
 from backend.config import settings
 
+_initialized_paths: set[str] = set()
+
 
 def get_conn() -> sqlite3.Connection:
     db_path = Path(settings.DB_PATH)
@@ -11,11 +13,16 @@ def get_conn() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    if str(db_path.resolve()) not in _initialized_paths:
+        init_db(conn)
+        _initialized_paths.add(str(db_path.resolve()))
     return conn
 
 
-def init_db() -> None:
-    conn = get_conn()
+def init_db(conn: sqlite3.Connection | None = None) -> None:
+    _owns_conn = conn is None
+    if conn is None:
+        conn = get_conn()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS articles (
             id INTEGER PRIMARY KEY,
@@ -67,4 +74,5 @@ def init_db() -> None:
         );
     """)
     conn.commit()
-    conn.close()
+    if _owns_conn:
+        conn.close()
