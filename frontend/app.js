@@ -151,74 +151,106 @@ document.getElementById('q').addEventListener('input', e => {
   debounce = setTimeout(() => { state.q = e.target.value; state.page = 1; loadArticles(); }, 300);
 });
 
-document.getElementById('brief-btn').addEventListener('click', async () => {
+async function fetchCachedDigest(topic, from, to) {
+  const params = new URLSearchParams({ topic, from, to });
+  return api(`/api/digest?${params}`);
+}
+
+function renderDigest(data) {
+  const d = data.digest;
+  const body = document.getElementById('dg-body');
+  const status = document.getElementById('dg-status');
+  status.textContent = `${data.item_count} articles · ${data.cached ? 'cached' : 'fresh'}`;
+  body.innerHTML = `
+    <div class="dg-period">${esc(d.period_summary)}</div>
+    <h3>Themes</h3>
+    ${(d.themes || []).map(t => `<div class="dg-theme"><strong>${esc(t.theme)}</strong> ${esc(t.description)}</div>`).join('')}
+    <h3>Key Stories</h3>
+    ${(d.key_stories || []).map(s => `<div class="dg-story" data-id="${s.article_id || ''}"><strong>${esc(s.title)}</strong><br>${esc(s.why)}</div>`).join('')}
+    <h3>Context</h3>
+    <div class="dg-context">${esc(d.context || '')}</div>
+    <h3>Outlook</h3>
+    <div class="dg-outlook">${esc(d.outlook || '')}</div>`;
+  body.querySelectorAll('.dg-story').forEach(el => {
+    if (el.dataset.id) el.addEventListener('click', () => { document.getElementById('digest-modal').hidden = true; openDrilldown(+el.dataset.id); });
+  });
+}
+
+function digestStageLabel(s) {
+  if (s.stage === 'generating') return `Analyzing ${s.item_count || '…'} articles — this can take a minute or two on the local model`;
+  if (s.stage === 'fetching') return 'Fetching articles…';
+  if (s.stage === 'cached') return 'Loaded from cache';
+  if (s.stage === 'failed') return s.error || 'Failed';
+  if (s.stage === 'done') return 'Done';
+  return 'Working…';
+}
+
+async function runDigest(force) {
   const modal = document.getElementById('digest-modal');
   const body = document.getElementById('dg-body');
   const status = document.getElementById('dg-status');
+  const prog = document.getElementById('dg-progress');
+  const fill = document.getElementById('dg-progress-fill');
+  const label = document.getElementById('dg-progress-label');
   const regen = document.getElementById('dg-regenerate');
   modal.hidden = false;
-  status.textContent = 'Generating brief…';
+  status.textContent = 'Starting…';
   body.innerHTML = '';
   regen.hidden = true;
+  prog.hidden = false;
+  fill.style.width = '0%';
   const params = new URLSearchParams({ topic: state.topic, from: state.from, to: state.to || today });
+  if (force) params.set('force', 'true');
   try {
-    const data = await api(`/api/digest?${params}`, { method: 'POST' });
-    const d = data.digest;
-    status.textContent = `${data.item_count} articles · ${data.cached ? 'cached' : 'fresh'}`;
-    body.innerHTML = `
-      <div class="dg-period">${esc(d.period_summary)}</div>
-      <h3>Themes</h3>
-      ${(d.themes || []).map(t => `<div class="dg-theme"><strong>${esc(t.theme)}</strong> ${esc(t.description)}</div>`).join('')}
-      <h3>Key Stories</h3>
-      ${(d.key_stories || []).map(s => `<div class="dg-story" data-id="${s.article_id || ''}"><strong>${esc(s.title)}</strong><br>${esc(s.why)}</div>`).join('')}
-      <h3>Context</h3>
-      <div class="dg-context">${esc(d.context || '')}</div>
-      <h3>Outlook</h3>
-      <div class="dg-outlook">${esc(d.outlook || '')}</div>`;
-    body.querySelectorAll('.dg-story').forEach(el => {
-      if (el.dataset.id) el.addEventListener('click', () => { modal.hidden = true; openDrilldown(+el.dataset.id); });
-    });
-    regen.hidden = false;
+    await api(`/api/digest?${params}`, { method: 'POST' });
+    const started = Date.now();
+    const poll = setInterval(async () => {
+      const s = await api('/api/digest/status');
+      const pct = Math.max(0, Math.min(100, s.pct || 0));
+      fill.style.width = pct + '%';
+      const elapsed = Math.round((Date.now() - started) / 1000);
+      label.textContent = `${digestStageLabel(s)} · ${pct}% (${elapsed}s)`;
+      if (!s.running) {
+        clearInterval(poll);
+        if (s.stage === 'failed') {
+          fill.style.width = '100%';
+          fill.classList.add('fail');
+          status.textContent = 'Topic Brief failed';
+          body.innerHTML = `
+            <div class="dg-hint">
+              <strong>Too much content?</strong> The brief couldn't be completed for this many articles.
+              Try narrowing the <strong>date range</strong> (e.g. to a single month), or use the
+              <strong>search box</strong> to focus on fewer articles, then run Topic Brief again.
+            </div>
+            <div class="dg-err">${esc(s.error || 'Unknown error')}</div>`;
+          regen.hidden = false;
+          return;
+        }
+        try {
+          const data = await fetchCachedDigest(state.topic, state.from, state.to || today);
+          prog.hidden = true;
+          renderDigest(data);
+          regen.hidden = false;
+        } catch {
+          status.textContent = 'Failed to load brief';
+          regen.hidden = false;
+        }
+      }
+    }, 1000);
   } catch {
-    status.textContent = 'Failed to generate brief';
+    status.textContent = 'Failed to start';
+    prog.hidden = true;
+    regen.hidden = false;
   }
-});
+}
+
+document.getElementById('brief-btn').addEventListener('click', () => runDigest(false));
 
 document.getElementById('digest-modal').querySelector('.modal-close').addEventListener('click', () => {
   document.getElementById('digest-modal').hidden = true;
 });
 
-document.getElementById('dg-regenerate').addEventListener('click', async () => {
-  const modal = document.getElementById('digest-modal');
-  const body = document.getElementById('dg-body');
-  const status = document.getElementById('dg-status');
-  const regen = document.getElementById('dg-regenerate');
-  status.textContent = 'Regenerating…';
-  body.innerHTML = '';
-  regen.hidden = true;
-  const params = new URLSearchParams({ topic: state.topic, from: state.from, to: state.to || today, force: 'true' });
-  try {
-    const data = await api(`/api/digest?${params}`, { method: 'POST' });
-    const d = data.digest;
-    status.textContent = `${data.item_count} articles · fresh`;
-    body.innerHTML = `
-      <div class="dg-period">${esc(d.period_summary)}</div>
-      <h3>Themes</h3>
-      ${(d.themes || []).map(t => `<div class="dg-theme"><strong>${esc(t.theme)}</strong> ${esc(t.description)}</div>`).join('')}
-      <h3>Key Stories</h3>
-      ${(d.key_stories || []).map(s => `<div class="dg-story" data-id="${s.article_id || ''}"><strong>${esc(s.title)}</strong><br>${esc(s.why)}</div>`).join('')}
-      <h3>Context</h3>
-      <div class="dg-context">${esc(d.context || '')}</div>
-      <h3>Outlook</h3>
-      <div class="dg-outlook">${esc(d.outlook || '')}</div>`;
-    body.querySelectorAll('.dg-story').forEach(el => {
-      if (el.dataset.id) el.addEventListener('click', () => { modal.hidden = true; openDrilldown(+el.dataset.id); });
-    });
-    regen.hidden = false;
-  } catch {
-    status.textContent = 'Failed to regenerate';
-  }
-});
+document.getElementById('dg-regenerate').addEventListener('click', () => runDigest(true));
 
 document.getElementById('update-btn').addEventListener('click', async () => {
   const btn = document.getElementById('update-btn');

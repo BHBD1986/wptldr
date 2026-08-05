@@ -12,7 +12,8 @@ from backend.schemas import ArticleDetail, ArticleOut, TopicCount
 from backend.text_utils import truncate
 from backend.update_state import get_state as _get_state
 from backend.update_state import start_update as _start_update
-from backend.digest import generate_digest as _generate_digest
+from backend.digest_state import get_state as _get_digest_state
+from backend.digest_state import start_digest as _start_digest
 from backend.runtime_paths import frontend_dir
 
 app = FastAPI(title="WP TLDR Explorer")
@@ -84,12 +85,15 @@ def create_digest(
 ):
     from_ = from_ or settings.DEFAULT_START
     to = to or date.today().isoformat()
-    try:
-        return _generate_digest(topic, from_, to, force=force)
-    except ValueError:
-        raise HTTPException(404, detail="No articles found for this topic and date range")
-    except RuntimeError as e:
-        raise HTTPException(503, detail=f"LLM backend error: {e}")
+    started = _start_digest(topic, from_, to, force=force)
+    if not started:
+        raise HTTPException(409, detail="Digest already running")
+    return {"started": True}
+
+
+@app.get("/api/digest/status")
+def digest_status():
+    return _get_digest_state()
 
 
 @app.get("/api/digest")

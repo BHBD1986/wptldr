@@ -126,7 +126,8 @@ python -m backend.digest --topic markets --from 2026-01-01 --to 2026-06-30 --for
 | `POST /api/articles/{id}/expand` | LLM drill-down (cached) |
 | `POST /api/update?topic=agtech` | Trigger data update pipeline for one topic (background) |
 | `GET /api/update/status` | Update pipeline progress |
-| `POST /api/digest?topic=&from=&to=&force=` | Generate topic brief (cached) |
+| `POST /api/digest?topic=&from=&to=&force=` | Start topic brief generation (background job) |
+| `GET /api/digest/status` | Topic brief job progress / result |
 | `GET /api/digest?topic=&from=&to=` | Retrieve cached topic brief |
 
 ## UI Features

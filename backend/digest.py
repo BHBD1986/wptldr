@@ -10,7 +10,8 @@ from backend.text_utils import truncate
 _SYSTEM = "You are a senior agriculture analyst writing a one-page brief for Canadian farmers. Output ONLY valid JSON."
 
 
-def fetch_items(topic: str, from_: str, to: str, cap: int = 150):
+def fetch_items(topic: str, from_: str, to: str, cap: int | None = None):
+    cap = cap or settings.DIGEST_MAX_ITEMS
     conn = get_conn()
     rows = conn.execute(
         """SELECT a.id, a.title, a.published_at, s.tldr
@@ -48,7 +49,65 @@ def build_prompt(items) -> str:
     )
 
 
-def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_run: bool = False) -> dict:
+def _parse_digest_json(raw: str, items) -> dict:
+    """Parse the model's JSON response into a dict.
+
+    Handles the local model occasionally wrapping the object in prose or
+    emitting a bare string; retries the LLM once before giving up.
+    """
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = None
+    if isinstance(data, dict):
+        return data
+    if isinstance(data, str):
+        embedded = _extract_json_object(data)
+        if embedded is not None:
+            data = embedded
+            if isinstance(data, dict):
+                return data
+    embedded = _extract_json_object(raw)
+    if isinstance(embedded, dict):
+        return embedded
+    return data
+
+
+def _extract_json_object(text: str):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    start = text.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(text[start:i + 1])
+                except json.JSONDecodeError:
+                    return None
+    return None
+
+
+def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_run: bool = False, progress=None) -> dict:
     conn = get_conn()
 
     if not force:
@@ -58,13 +117,21 @@ def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_ru
         ).fetchone()
         if row:
             conn.close()
+            if progress:
+                progress("cached", 100, item_count=row["item_count"])
             return {"digest": json.loads(row["content"]), "item_count": row["item_count"], "cached": True}
 
+    if progress:
+        progress("fetching", 10)
     items = fetch_items(topic, from_, to)
     if not items:
         conn.close()
+        if progress:
+            progress("failed", 100, error="No articles found for this topic and date range")
         raise ValueError("No articles found for topic and date range")
 
+    if progress:
+        progress("generating", 30, item_count=len(items))
     prompt = build_prompt(items)
     raw = chat(prompt, system=_SYSTEM)
 
@@ -74,12 +141,21 @@ def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_ru
         return {"digest": data, "item_count": len(items), "cached": False, "_dry": True}
 
     try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
+        data = _parse_digest_json(raw, items)
+    except (json.JSONDecodeError, TypeError):
         raw = chat(prompt, system=_SYSTEM)
-        data = json.loads(raw)
+        data = _parse_digest_json(raw, items)
+
+    if not isinstance(data, dict):
+        conn.close()
+        raise RuntimeError(
+            "The model did not return a structured brief (it returned too much content to fit). "
+            "Narrow the date range or use the search box, then try again."
+        )
 
     for story in data.get("key_stories", []):
+        if not isinstance(story, dict):
+            continue
         ref = story.get("ref")
         if ref and 1 <= ref <= len(items):
             item = items[ref - 1]
@@ -95,6 +171,8 @@ def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_ru
     conn.commit()
     conn.close()
 
+    if progress:
+        progress("done", 100, item_count=len(items))
     return {"digest": data, "item_count": len(items), "cached": False}
 
 

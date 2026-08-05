@@ -18,6 +18,7 @@ class Settings:
     LOCAL_MODEL_URL: str = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
     LOCAL_MODEL_N_THREADS: int = 0
     SUMMARIZE_LIMIT: int = 500
+    DIGEST_MAX_ITEMS: int = 60
 
     def __init__(self):
         hints = self.__class__.__annotations__

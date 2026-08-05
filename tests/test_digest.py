@@ -17,6 +17,18 @@ def test_build_prompt_numbering():
     assert "Article A" in prompt
 
 
+def test_parse_digest_json_extracts_embedded_object():
+    from backend.digest import _parse_digest_json, _extract_json_object
+
+    raw = 'Sure! Here is the brief: {"period_summary": "ok", "themes": [], "key_stories": [], "context": "", "outlook": ""}'
+    out = _parse_digest_json(raw, [])
+    assert out["period_summary"] == "ok"
+
+    assert _extract_json_object('{"a": 1}') == {"a": 1}
+    assert _extract_json_object('prefix {"a": 1} suffix') == {"a": 1}
+    assert _extract_json_object("no json here") is None
+
+
 def test_generate_digest_stores_and_maps_refs(monkeypatch, tmp_path):
     import sqlite3
     from backend.config import settings
