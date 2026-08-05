@@ -4,16 +4,19 @@
 Build from the project root:
     pyinstaller packaging/WPTLDR.spec
 
-Produces a onedir build under dist/WPTLDR (and WPTLDR.app on macOS).
-The AI model is intentionally NOT bundled — it is downloaded into the
-user's app-data folder on first launch.
+Produces a onedir build under dist/WPTLDR (Windows) or dist/WPTLDR.app
+(macOS). The AI model is intentionally NOT bundled — it is downloaded into
+the user's app-data folder on first launch.
 """
 
+import os
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 root = Path(SPECPATH).resolve().parents[0]
+
+app_version = os.environ.get("WPTLDR_VERSION", "0.1.0")
 
 datas = [(str(root / "frontend"), "frontend")]
 binaries = []
@@ -58,6 +61,13 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    bundle_identifier="com.wptldr.app",
+    info_plist={
+        "CFBundleDisplayName": "WP TLDR",
+        "CFBundleShortVersionString": app_version,
+        "CFBundleVersion": app_version,
+        "NSHighResolutionCapable": True,
+    },
 )
 
 coll = COLLECT(
