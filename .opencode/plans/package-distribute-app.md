@@ -21,7 +21,7 @@ PyInstaller builds a native app per OS → GitHub Actions builds both on every r
 - [x] **Repo & remote** — `gh auth status`, create repo via `gh repo create`, add remote, push.
 - [x] **Local verification (Windows)** — Build with PyInstaller here, run the exe, verify health endpoint and that first-launch model download + summarization work from the packaged app.
 - [x] **Install guide** — `INSTALL_GUIDE.md` in plain English (which file to download, one-time security bypass, first-run model download, how to open/quit, how to update) + auto-generated Release notes pointing to it.
-- [ ] **Docs/cleanup** — README packaging section; `.gitignore` for `dist/`, `build/`, `*.spec` outputs.
+- [x] **Docs/cleanup** — README packaging section; `.gitignore` for `dist/`, `build/`, `*.spec` outputs.
 
 ## Tradeoffs / caveats
 - **Unsigned apps**: users see one warning — Windows *More info → Run anyway*; macOS *right-click → Open*. Documented step-by-step; no cert cost.
