@@ -19,7 +19,7 @@ PyInstaller builds a native app per OS → GitHub Actions builds both on every r
 - [x] **macOS packaging** — PyInstaller `.app` bundle, zipped for distribution (drag to Applications).
 - [x] **GitHub Actions** (`.github/workflows/release.yml`) — matrix `[windows-latest, macos-latest]`; build via spec; **smoke-test the packaged binary** (`/api/health`); package (setup .exe / mac .app zip); attach to a GitHub Release on `v*` tags (plus manual `workflow_dispatch`).
 - [x] **Repo & remote** — `gh auth status`, create repo via `gh repo create`, add remote, push.
-- [ ] **Local verification (Windows)** — Build with PyInstaller here, run the exe, verify health endpoint and that first-launch model download + summarization work from the packaged app.
+- [x] **Local verification (Windows)** — Build with PyInstaller here, run the exe, verify health endpoint and that first-launch model download + summarization work from the packaged app.
 - [ ] **Install guide** — `INSTALL_GUIDE.md` in plain English (which file to download, one-time security bypass, first-run model download, how to open/quit, how to update) + auto-generated Release notes pointing to it.
 - [ ] **Docs/cleanup** — README packaging section; `.gitignore` for `dist/`, `build/`, `*.spec` outputs.
 
