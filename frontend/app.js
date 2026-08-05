@@ -178,6 +178,8 @@ function renderDigest(data) {
 
 function digestStageLabel(s) {
   if (s.stage === 'generating') return `Analyzing ${s.item_count || '…'} articles — this can take a minute or two on the local model`;
+  if (s.stage === 'chunk') return `Summarizing batches of ${s.item_count || '…'} articles…`;
+  if (s.stage === 'combining') return 'Combining batch summaries into the final brief…';
   if (s.stage === 'fetching') return 'Fetching articles…';
   if (s.stage === 'cached') return 'Loaded from cache';
   if (s.stage === 'failed') return s.error || 'Failed';

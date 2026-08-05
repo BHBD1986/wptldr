@@ -114,6 +114,10 @@ python -m backend.digest --topic agtech --from 2026-07-01 --to 2026-07-31 --dry-
 python -m backend.digest --topic markets --from 2026-01-01 --to 2026-06-30 --force
 ```
 
+For large date ranges the brief is generated in two passes: articles are summarized in
+batches of `DIGEST_CHUNK_SIZE` (default 40), then the batch digests are merged into the
+final brief, so whole-year ranges work within the local model's context limit.
+
 ## API Endpoints
 
 | Endpoint | Description |
