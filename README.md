@@ -4,7 +4,44 @@ Ingests Western Producer articles via the [WordPress REST API](https://www.produ
 
 **Topics:** AgTech (primary lens), Livestock, Crops, Markets, Politics, Unclassified — with date-range filtering, full-text search, and on-demand drill-down expansion. Articles that don't match any topic are grouped under **Unclassified**.
 
-## Setup
+## Download & Install (no coding required)
+
+The app ships as a pre-built desktop app. You do **not** need Python, Node, or any developer tools. Steps below take you from the GitHub page to a running app.
+
+### Windows (PC)
+
+1. Go to https://github.com/BHBD1986/wptldr
+2. On the right side of the page, click **Releases** (under "About"). If a box showing "Latest release" appears, click it instead.
+3. Find the latest release. Under **Assets**, click **`WPTLDR-Setup-vX.X.X.exe`** to download it.
+   - No `.exe` in the list? Download **`WPTLDR-windows-x64-vX.X.X.zip`** instead and skip to step 8.
+4. Double-click the downloaded `WPTLDR-Setup-vX.X.X.exe` file.
+5. Windows SmartScreen may show a blue "Windows protected your PC" warning. Click **More info**, then **Run anyway**. (This is a one-time step — the app isn't code-signed yet.)
+6. Follow the installer wizard: accept the default folder and click **Next** → **Install**. It adds a **Start-menu entry** and a **Desktop shortcut**.
+7. Launch the app by double-clicking the **WP TLDR** desktop shortcut (or the Start-menu entry).
+8. **First launch:** a small status window opens and the app downloads the ~470 MB AI model automatically (takes a few minutes the first time). Wait for the status text to say the server is ready — your browser opens on its own.
+
+**Zip fallback (if you used the `.zip` in step 3):** right-click the zip → **Extract All**, open the extracted `WPTLDR` folder, and double-click **`WPTLDR.exe`**. First launch downloads the model as in step 8.
+
+### Mac
+
+1. Go to https://github.com/BHBD1986/wptldr
+2. On the right side of the page, click **Releases** (under "About"). If a box showing "Latest release" appears, click it instead.
+3. Find the latest release. Under **Assets**, click **`WPTLDR-macos-arm64-vX.X.X.zip`** to download it. (This build is for Apple Silicon M-series Macs.)
+4. Double-click the downloaded `.zip` to unzip it — a **`WPTLDR.app`** icon appears.
+5. Drag **`WPTLDR.app`** into your **Applications** folder.
+6. **First open:** right-click (or Ctrl-click) **`WPTLDR.app`** in Applications → **Open** → click **Open** in the dialog. (This is the one-time Gatekeeper bypass — the app isn't notarized yet. After this, normal double-click works.)
+7. Launch the app by double-clicking **WP TLDR** in Applications.
+8. **First launch:** a small status window opens and the app downloads the ~470 MB AI model automatically (takes a few minutes the first time). Wait for the status text to say the server is ready — your browser opens on its own.
+
+### After install (both platforms)
+
+- A browser tab opens at the app's local address (e.g. `http://127.0.0.1:PORT`) — that's the app UI.
+- The small status window stays open while the app runs; use its **Quit** button to close the app (or quit from the taskbar/status menu).
+- Updating: when a new release is posted, download the new installer and run it — your saved data is kept.
+
+---
+
+## Developer Setup
 
 ```bash
 pip install -r requirements.txt
