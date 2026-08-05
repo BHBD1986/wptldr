@@ -60,11 +60,11 @@ def health():
 # ── update pipeline ─────────────────────────────────────────────────
 
 @app.post("/api/update")
-def trigger_update():
+def trigger_update(topic: str = Query(None)):
     state = _get_state()
     if state["running"]:
         raise HTTPException(409, detail="Update already running")
-    ok = _start_update()
+    ok = _start_update(topic)
     return {"started": ok}
 
 
