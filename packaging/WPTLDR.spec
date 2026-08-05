@@ -10,6 +10,7 @@ the user's app-data folder on first launch.
 """
 
 import os
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all, collect_submodules
@@ -78,3 +79,17 @@ coll = COLLECT(
     upx=False,
     name="WPTLDR",
 )
+
+if sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name="WPTLDR.app",
+        icon=None,
+        bundle_identifier="com.wptldr.app",
+        info_plist={
+            "CFBundleDisplayName": "WP TLDR",
+            "CFBundleShortVersionString": app_version,
+            "CFBundleVersion": app_version,
+            "NSHighResolutionCapable": True,
+        },
+    )
