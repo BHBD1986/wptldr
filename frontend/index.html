@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WP TLDR Explorer</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Western Producer TLDR</h1>
+  <p id="stats">Loading…</p>
+</header>
+
+<section id="filters">
+  <div id="topic-bar"></div>
+  <div id="date-bar">
+    <label>From <input type="date" id="date-from"></label>
+    <label>To <input type="date" id="date-to"></label>
+    <label>Search <input type="search" id="q" placeholder="title keyword..."></label>
+    <button id="update-btn" title="Fetches new articles and summarizes the selected topic">Update data</button>
+    <span id="update-status"></span>
+    <button id="brief-btn">Topic Brief</button>
+  </div>
+</section>
+
+<main>
+  <div id="article-list"></div>
+  <div id="pager"></div>
+</main>
+
+<div id="digest-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close">&times;</button>
+    <h2>Topic Brief</h2>
+    <div id="dg-status">Loading…</div>
+    <div id="dg-body"></div>
+    <button id="dg-regenerate" hidden>Regenerate</button>
+  </div>
+</div>
+<script src="/app.js" defer></script>
+</body>
+</html>
