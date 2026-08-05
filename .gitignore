@@ -1,5 +1,6 @@
 data/
 models/
+.opencode/nelson-state.local.json
 .env
 .venv/
 __pycache__/
