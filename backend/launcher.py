@@ -182,6 +182,7 @@ def _model_exists() -> bool:
 
 def _run_console() -> None:
     """Fallback when tkinter is unavailable (dev/headless)."""
+    _ensure_stdio()
     configure_settings()
     port = resolve_port()
     url = f"http://127.0.0.1:{port}"
@@ -195,6 +196,9 @@ def _run_console() -> None:
 
 
 def main() -> None:
+    if os.environ.get("WPTLDR_CONSOLE"):
+        _run_console()
+        return
     try:
         import tkinter  # noqa: F401
     except ImportError:

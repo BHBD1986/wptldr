@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for manual builds (e.g. 0.1.0)"
+        required: false
+        default: "dev"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: windows
+          - os: macos-latest
+            label: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version || 'dev' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build with PyInstaller
+        env:
+          WPTLDR_VERSION: ${{ steps.version.outputs.version }}
+        run: python -m PyInstaller packaging/WPTLDR.spec --noconfirm
+
+      - name: Smoke test packaged app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:WPTLDR_PORT = '8890'
+          $env:WPTLDR_SKIP_MODEL_DOWNLOAD = '1'
+          $env:WPTLDR_CONSOLE = '1'
+          $p = Start-Process -FilePath "dist\WPTLDR\WPTLDR.exe" -PassThru
+          try {
+            $ok = $false
+            for ($i = 0; $i -lt 30; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $r = Invoke-WebRequest -Uri "http://127.0.0.1:8890/api/health" -UseBasicParsing -TimeoutSec 3
+                if ($r.Content -match 'ok') { $ok = $true; break }
+              } catch {}
+            }
+            if (-not $ok) { throw "packaged app health check failed" }
+            Write-Output "health ok"
+          } finally {
+            if (Get-Process -Id $p.Id -ErrorAction SilentlyContinue) { Stop-Process -Id $p.Id -Force }
+          }
+
+      - name: Smoke test packaged app (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          WPTLDR_PORT=8890 WPTLDR_SKIP_MODEL_DOWNLOAD=1 WPTLDR_CONSOLE=1 \
+            ./dist/WPTLDR.app/Contents/MacOS/WPTLDR &
+          PID=$!
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8890/api/health 2>/dev/null | grep -q ok; then ok=1; break; fi
+            sleep 1
+          done
+          kill $PID 2>/dev/null || true
+          [ -n "$ok" ] || { echo "packaged app health check failed"; exit 1; }
+          echo "health ok"
+
+      - name: Install Inno Setup (Windows, optional)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install innosetup -y --no-progress || echo "Inno Setup unavailable; falling back to zip"
+
+      - name: Package release artifact
+        run: python packaging/package.py --version ${{ steps.version.outputs.version }}
+
+      - name: Upload artifacts to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/WPTLDR-Setup-*.exe
+            dist/WPTLDR-windows-x64-*.zip
+            dist/WPTLDR-macos-arm64-*.zip
+          draft: true
+          generate_release_notes: true
