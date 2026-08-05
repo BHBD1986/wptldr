@@ -72,6 +72,9 @@ jobs:
             }
             if (-not $ok) { throw "packaged app health check failed" }
             Write-Output "health ok"
+            $s = Invoke-RestMethod -Uri "http://127.0.0.1:8890/api/stats" -TimeoutSec 5
+            if ($s.articles -lt 1000) { throw "expected seeded 2026 dataset, got articles=$($s.articles)" }
+            Write-Output "seeded dataset ok (articles=$($s.articles))"
           } finally {
             if (Get-Process -Id $p.Id -ErrorAction SilentlyContinue) { Stop-Process -Id $p.Id -Force }
           }
@@ -88,9 +91,12 @@ jobs:
             if curl -sf http://127.0.0.1:8890/api/health 2>/dev/null | grep -q ok; then ok=1; break; fi
             sleep 1
           done
-          kill $PID 2>/dev/null || true
-          [ -n "$ok" ] || { echo "packaged app health check failed"; exit 1; }
+          [ -n "$ok" ] || { echo "packaged app health check failed"; kill $PID 2>/dev/null; exit 1; }
           echo "health ok"
+          n=$(curl -sf http://127.0.0.1:8890/api/stats 2>/dev/null | sed -n 's/.*"articles":\([0-9]*\).*/\1/p')
+          kill $PID 2>/dev/null || true
+          [ -n "$n" ] && [ "$n" -ge 1000 ] || { echo "expected seeded 2026 dataset, got articles=$n"; exit 1; }
+          echo "seeded dataset ok (articles=$n)"
 
       - name: Install Inno Setup (Windows, optional)
         if: runner.os == 'Windows'

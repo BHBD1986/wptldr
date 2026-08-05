@@ -20,6 +20,7 @@ root = Path(SPECPATH).resolve().parents[0]
 app_version = os.environ.get("WPTLDR_VERSION", "0.1.0")
 
 datas = [(str(root / "frontend"), "frontend")]
+datas.append((str(root / "seed" / "wptldr.db"), "seed"))
 binaries = []
 hiddenimports = []
 
