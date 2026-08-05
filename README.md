@@ -2,7 +2,7 @@
 
 Ingests Western Producer articles via the [WordPress REST API](https://www.producer.com/wp-json/wp/v2) (no scraping required), classifies them by topic, summarizes via LLM, and serves a vanilla HTML/JS explorer UI.
 
-**Topics:** AgTech (primary lens), Livestock, Crops, Markets, Politics — with date-range filtering, full-text search, and on-demand drill-down expansion.
+**Topics:** AgTech (primary lens), Livestock, Crops, Markets, Politics, Unclassified — with date-range filtering, full-text search, and on-demand drill-down expansion. Articles that don't match any topic are grouped under **Unclassified**.
 
 ## Setup
 

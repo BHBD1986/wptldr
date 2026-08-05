@@ -11,7 +11,7 @@ class Settings:
     LLM_API_KEY: str = ""
     LLM_MODEL: str = "deepseek-v4-flash"
     DB_PATH: str = "data/wptldr.db"
-    TOPICS: list[str] = ["agtech", "livestock", "crops", "markets", "politics"]
+    TOPICS: list[str] = ["agtech", "livestock", "crops", "markets", "politics", "unclassified"]
     DEFAULT_START: str = "2026-01-01"
     LOCAL_MODEL_PATH: str = "models/qwen2.5-0.5b-instruct-q4_k_m.gguf"
     LOCAL_MODEL_URL: str = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"

@@ -19,6 +19,8 @@ def run():
         cats = json.loads(row["categories"])
         text = row["title"] + " " + (row["content_text"] or "")[:2000]
         topics = classify(cats, text)
+        if not topics:
+            topics = [("unclassified", 0.0)]
         for topic, score in topics:
             classified.append((row["id"], topic, score))
 
