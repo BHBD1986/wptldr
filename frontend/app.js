@@ -117,9 +117,14 @@ async function openDrilldown(id) {
     el.disabled = true;
     el.textContent = 'Loading…';
     const extra = document.getElementById(`dd-extra-${id}`);
+    let res;
     try {
-      const res = await fetch(`/api/articles/${id}/expand`, { method: 'POST' });
-      if (!res.ok) throw new Error('503');
+      res = await fetch(`/api/articles/${id}/expand`, { method: 'POST' });
+      if (!res.ok) {
+        let detail = 'Backend unavailable';
+        try { const b = await res.json(); if (b && b.detail) detail = b.detail; } catch {}
+        throw new Error(detail);
+      }
       const data = await res.json();
       const c = data.content;
       extra.innerHTML = `
@@ -128,9 +133,11 @@ async function openDrilldown(id) {
         <h4>Outlook</h4><p>${esc(c.outlook || '')}</p>`;
       extra.classList.add('show');
       el.textContent = data.cached ? 'Go Deeper (cached)' : 'Done';
-    } catch {
-      el.textContent = 'Backend unavailable';
-      setTimeout(() => { el.disabled = false; el.textContent = 'Retry'; }, 3000);
+    } catch (err) {
+      extra.innerHTML = `<h4>Deeper Context</h4><p>${esc(err.message)}</p>`;
+      extra.classList.add('show');
+      el.textContent = 'Retry';
+      el.disabled = false;
     }
   });
 

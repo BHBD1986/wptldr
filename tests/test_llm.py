@@ -1,7 +1,45 @@
 import json
 
+import pytest
+
 import backend.llm
 from backend.llm import chat, model_name
+
+
+def test_license_expired_blocks_chat(monkeypatch):
+    monkeypatch.setattr(backend.llm.settings, "LLM_API_KEY", "secret")
+    monkeypatch.setattr(backend.llm.settings, "LICENSE_EXPIRY", "2000-01-01")
+    with pytest.raises(RuntimeError, match="license has expired"):
+        chat("hello")
+
+
+def test_license_valid_allows_chat(monkeypatch):
+    monkeypatch.setattr(backend.llm.settings, "LLM_API_KEY", "secret")
+    monkeypatch.setattr(backend.llm.settings, "LICENSE_EXPIRY", "2999-01-01")
+    monkeypatch.setattr(backend.llm.settings, "LLM_BASE_URL", "https://example.com/v1")
+    monkeypatch.setattr(backend.llm.settings, "LLM_MODEL", "test-model")
+
+    class FakeResp:
+        choices = [type("C", (), {"message": type("M", (), {"content": "{}"})})()]
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        @property
+        def chat(self):
+            return self
+
+        @property
+        def completions(self):
+            return self
+
+        def create(self, **kwargs):
+            return FakeResp()
+
+    monkeypatch.setattr(backend.llm, "OpenAI", FakeClient)
+    assert chat("hi") == "{}"
+
 
 
 def test_chat_routes_to_cloud(monkeypatch):

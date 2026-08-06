@@ -280,6 +280,8 @@ def expand_article(article_id: int):
         )
         data = json.loads(raw)
     except Exception as e:
+        if "license" in str(e).lower():
+            raise HTTPException(503, detail=str(e))
         raise HTTPException(503, detail="Summarization backend unreachable")
 
     conn.execute(

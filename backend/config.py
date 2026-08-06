@@ -39,6 +39,7 @@ class Settings:
     LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_API_KEY: str = ""
     LLM_MODEL: str = "google/gemma-4-26b-a4b-it"
+    LICENSE_EXPIRY: str = "2027-04-30"
     DB_PATH: str = "data/wptldr.db"
     TOPICS: list[str] = ["agtech", "livestock", "crops", "markets", "politics", "unclassified"]
     DEFAULT_START: str = "2026-01-01"

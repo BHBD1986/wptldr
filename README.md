@@ -57,6 +57,7 @@ The packaged app ships with an OpenRouter API key baked in (`api_key.txt`, gitig
 - `LLM_BASE_URL` (default `https://openrouter.ai/api/v1`)
 - `LLM_API_KEY` (leave blank to use the bundled key)
 - `LLM_MODEL` (default `google/gemma-4-26b-a4b-it`, a free model)
+- `LICENSE_EXPIRY` (default `2027-04-30`) — after this date the AI summaries and topic briefs are disabled with a "license expired" message; browsing existing data still works
 
 ### LLM check
 

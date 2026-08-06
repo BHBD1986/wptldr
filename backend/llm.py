@@ -1,10 +1,29 @@
+import datetime as _dt
+
 import httpx
 from openai import OpenAI
 
 from backend.config import settings
 
+_LICENSE_MSG = (
+    "Your WP TLDR license has expired. "
+    "The AI summaries and topic briefs are no longer available — "
+    "please contact your instructor for a renewal."
+)
+
+
+def license_expired() -> bool:
+    try:
+        expiry = _dt.date.fromisoformat(settings.LICENSE_EXPIRY)
+    except (ValueError, TypeError):
+        return False
+    return _dt.date.today() > expiry
+
 
 def chat(user: str, system: str = "", json_mode: bool = True) -> str:
+    if license_expired():
+        raise RuntimeError(_LICENSE_MSG)
+
     client = OpenAI(
         base_url=settings.LLM_BASE_URL, api_key=settings.LLM_API_KEY, timeout=120
     )
