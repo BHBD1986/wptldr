@@ -290,6 +290,37 @@ document.getElementById('update-btn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('import-btn').addEventListener('click', () => {
+  if (!confirm('Replace all current data with the file you choose?\n\nYour existing data will be kept as a .bak backup.')) return;
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', async () => {
+  const input = document.getElementById('import-file');
+  const status = document.getElementById('update-status');
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true;
+  status.textContent = 'Importing…';
+  try {
+    const r = await fetch('/api/import', { method: 'POST', body: fd });
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.detail || 'Import failed');
+    status.textContent = `Imported ${body.articles} articles · ${body.summarized} summarized`;
+    loadStats();
+    loadTopics();
+    loadArticles();
+  } catch (e) {
+    status.textContent = `Import failed: ${e.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 function esc(s) {
   const d = document.createElement('div');
   d.textContent = s;

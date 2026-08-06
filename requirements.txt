@@ -5,3 +5,4 @@ beautifulsoup4
 openai
 pytest
 python-dotenv
+python-multipart

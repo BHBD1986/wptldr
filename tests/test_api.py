@@ -66,3 +66,42 @@ def test_articles_filter_by_topic(seeded_db):
 def test_article_404(seeded_db):
     resp = TestClient(app).get("/api/articles/999")
     assert resp.status_code == 404
+
+
+def test_import_replaces_database(seeded_db, tmp_path):
+    import sqlite3
+
+    from backend.db import init_db
+
+    new_db = tmp_path / "new.db"
+    settings.DB_PATH = str(new_db)
+    init_db()
+    conn = sqlite3.connect(str(new_db))
+    conn.execute(
+        "INSERT INTO articles (id, wp_id, title, url, section, published_at, categories, content_text, excerpt, word_count, ingested_at) "
+        "VALUES (1, 1, 'Imported article', 'http://x.com', 'news', '2026-07-01', '[]', 'text', 'exc', 10, 'now')"
+    )
+    conn.commit()
+    conn.close()
+    settings.DB_PATH = seeded_db
+
+    client = TestClient(app)
+    with open(new_db, "rb") as f:
+        resp = client.post("/api/import", files={"file": ("new.db", f, "application/octet-stream")})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert body["articles"] == 1
+
+    stats = client.get("/api/stats").json()
+    assert stats["articles"] == 1
+
+
+def test_import_rejects_non_db_file(seeded_db, tmp_path):
+    junk = tmp_path / "junk.db"
+    junk.write_text("not a database")
+    client = TestClient(app)
+    with open(junk, "rb") as f:
+        resp = client.post("/api/import", files={"file": ("junk.db", f, "application/octet-stream")})
+    assert resp.status_code == 400

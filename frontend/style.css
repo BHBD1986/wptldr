@@ -54,6 +54,8 @@ main { padding: 1rem; max-width: 960px; margin: 0 auto; }
 .dd-source { font-size: 0.85rem; display: inline-block; margin-top: 0.75rem; color: #1a3a5c; }
 
 #brief-btn { background: #1a3a5c; color: #fff; border: none; padding: 0.35rem 0.9rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+#import-btn { background: #6c757d; color: #fff; border: none; padding: 0.35rem 0.9rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+#import-btn:disabled { opacity: 0.5; cursor: default; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
 .modal-overlay[hidden] { display: none; }
 .modal-card { background: #fff; border-radius: 10px; padding: 2rem; max-width: 720px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }

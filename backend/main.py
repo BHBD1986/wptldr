@@ -1,7 +1,10 @@
 import json
+import shutil
+import tempfile
 from datetime import date, datetime
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -72,6 +75,75 @@ def trigger_update(topic: str = Query(None)):
 @app.get("/api/update/status")
 def update_status():
     return _get_state()
+
+
+# ── import data ───────────────────────────────────────────────────────
+
+@app.post("/api/import")
+async def import_db(file: UploadFile = File(...)):
+    """Replace the app's database with an uploaded WP TLDR .db file.
+
+    The current database is backed up first, then the uploaded file is
+    swapped in. The web UI reloads afterwards.
+    """
+    db_path = Path(settings.DB_PATH)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not file.filename or not file.filename.lower().endswith(".db"):
+        raise HTTPException(400, detail="Please upload a .db file")
+
+    fd = None
+    tmp_path = None
+    try:
+        import os
+        import sqlite3
+
+        fd, tmp_name = tempfile.mkstemp(suffix=".db")
+        with os.fdopen(fd, "wb") as out:
+            shutil.copyfileobj(file.file, out)
+        tmp_path = Path(tmp_name)
+
+        try:
+            conn = sqlite3.connect(str(tmp_path))
+            tables = {
+                r[0]
+                for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+            }
+            conn.close()
+        except sqlite3.Error:
+            tables = set()
+        if not {"articles", "summaries"}.issubset(tables):
+            raise HTTPException(
+                400,
+                detail="That file isn't a WP TLDR database (missing articles/summaries tables)",
+            )
+
+        if db_path.exists():
+            shutil.copy2(db_path, db_path.with_suffix(".db.bak"))
+
+        for sidecar in (".db-wal", ".db-shm"):
+            p = Path(str(db_path) + sidecar)
+            if p.exists():
+                p.unlink()
+
+        shutil.copy2(tmp_path, db_path)
+
+        counts = _conn().execute(
+            "SELECT (SELECT COUNT(*) FROM articles), (SELECT COUNT(*) FROM summaries)"
+        ).fetchone()
+        return {
+            "ok": True,
+            "articles": counts[0],
+            "summarized": counts[1],
+        }
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
 
 
 # ── digest ────────────────────────────────────────────────────────────

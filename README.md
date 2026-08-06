@@ -39,6 +39,16 @@ The app ships as a pre-built desktop app. You do **not** need Python, Node, or a
 - The small status window stays open while the app runs; use its **Quit** button to close the app (or quit from the taskbar/status menu).
 - Updating: when a new release is posted, download the new installer and run it — your saved data is kept.
 
+### Getting updated data (no API needed)
+
+If your instructor sends a **`.db` data file**, you don't need to touch the app's settings or the API:
+
+1. In the app, click **Import data**.
+2. Choose the `.db` file you were sent.
+3. The app replaces its database (your previous data is kept as a backup) and reloads — new articles and summaries appear immediately.
+
+This is the fastest way to get fresh data without running an update.
+
 ---
 
 ## Developer Setup
@@ -130,6 +140,7 @@ final brief, so whole-year ranges work within the local model's context limit.
 | `POST /api/articles/{id}/expand` | LLM drill-down (cached) |
 | `POST /api/update?topic=agtech` | Trigger data update pipeline for one topic (background) |
 | `GET /api/update/status` | Update pipeline progress |
+| `POST /api/import` | Upload a `.db` file to replace the app database (backup kept as `.db.bak`) |
 | `POST /api/digest?topic=&from=&to=&force=` | Start topic brief generation (background job) |
 | `GET /api/digest/status` | Topic brief job progress / result |
 | `GET /api/digest?topic=&from=&to=` | Retrieve cached topic brief |
