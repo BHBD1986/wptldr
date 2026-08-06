@@ -35,6 +35,16 @@ jobs:
       - name: Install dependencies
         run: pip install --retries 5 --timeout 120 -r requirements.txt pyinstaller
 
+      - name: Write bundled API key
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.WPTLDR_API_KEY }}" ]; then
+            printf '%s\n' "${{ secrets.WPTLDR_API_KEY }}" > api_key.txt
+            echo "wrote api_key.txt ($(wc -c < api_key.txt) bytes)"
+          else
+            echo "WPTLDR_API_KEY secret not set; building without bundled key"
+          fi
+
       - name: Run tests
         run: python -m pytest -q
 
