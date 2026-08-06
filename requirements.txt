@@ -5,7 +5,3 @@ beautifulsoup4
 openai
 pytest
 python-dotenv
---extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
-# Pinned to 0.3.29: the 0.3.30-0.3.34 macOS arm64 wheels are corrupt upstream
-# (Bad CRC in libggml-base), which breaks macOS CI installs.
-llama-cpp-python==0.3.29

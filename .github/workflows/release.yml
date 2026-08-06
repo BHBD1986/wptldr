@@ -58,7 +58,6 @@ jobs:
         shell: pwsh
         run: |
           $env:WPTLDR_PORT = '8890'
-          $env:WPTLDR_SKIP_MODEL_DOWNLOAD = '1'
           $env:WPTLDR_CONSOLE = '1'
           $p = Start-Process -FilePath "dist\WPTLDR\WPTLDR.exe" -PassThru
           try {
@@ -83,7 +82,7 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          WPTLDR_PORT=8890 WPTLDR_SKIP_MODEL_DOWNLOAD=1 WPTLDR_CONSOLE=1 \
+          WPTLDR_PORT=8890 WPTLDR_CONSOLE=1 \
             ./dist/WPTLDR.app/Contents/MacOS/WPTLDR &
           PID=$!
           ok=""

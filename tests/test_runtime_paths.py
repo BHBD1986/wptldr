@@ -23,12 +23,6 @@ def test_app_data_dir_uses_localappdata_on_windows(monkeypatch):
     assert str(rp.app_data_dir()) == r"C:\Users\Test\AppData\Local\WPTLDR"
 
 
-def test_model_path_filename_matches_model_url():
-    from backend.config import settings
-
-    assert rp.model_path().name == settings.LOCAL_MODEL_URL.rsplit("/", 1)[-1]
-
-
 def test_frontend_dir_exists_in_dev():
     assert rp.frontend_dir().is_dir()
 

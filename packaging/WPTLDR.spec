@@ -21,14 +21,16 @@ app_version = os.environ.get("WPTLDR_VERSION", "0.1.0")
 
 datas = [(str(root / "frontend"), "frontend")]
 datas.append((str(root / "seed" / "wptldr.db"), "seed"))
+key_file = root / "api_key.txt"
+if key_file.exists():
+    datas.append((str(key_file), "."))
 binaries = []
 hiddenimports = []
 
-for pkg in ("llama_cpp", "uvicorn"):
-    d, b, h = collect_all(pkg)
-    datas += d
-    binaries += b
-    hiddenimports += h
+d, b, h = collect_all("uvicorn")
+datas += d
+binaries += b
+hiddenimports += h
 
 hiddenimports += collect_submodules("fastapi")
 

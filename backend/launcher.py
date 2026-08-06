@@ -70,25 +70,6 @@ def run_server(port: int):
     return server
 
 
-def _start_model_download(on_progress) -> None:
-    from backend import local_llm
-
-    if local_llm.model_available():
-        return
-
-    def _cb(done: int, total: int):
-        if total:
-            on_progress(int(done * 100 // total))
-        else:
-            on_progress(0)
-
-    try:
-        local_llm.download_model(progress_cb=_cb)
-        on_progress(100)
-    except Exception as exc:  # noqa: BLE001 - surface any failure to the user
-        on_progress(-1, str(exc))
-
-
 def _run_tk() -> None:
     import tkinter as tk
 
@@ -121,7 +102,7 @@ def _run_tk() -> None:
     tk.Button(buttons, text="Quit", width=16,
               command=root.destroy).pack(side="left", padx=8)
 
-    state = {"opened": False, "downloading": False}
+    state = {"opened": False}
 
     def set_status(text: str) -> None:
         root.after(0, lambda: status.configure(text=text))
@@ -143,43 +124,17 @@ def _run_tk() -> None:
 
     threading.Thread(target=_start, daemon=True).start()
 
-    # First run: kick off the model download so it's ready before first use.
-    if not os.environ.get("WPTLDR_SKIP_MODEL_DOWNLOAD") and not _model_exists():
-        state["downloading"] = True
-
-        def on_progress(pct: int, err: str = ""):
-            if err:
-                state["downloading"] = False
-                set_status(f"Couldn't download the AI model.\n{err}\n\n"
-                           "The app will still open — summaries need the model.")
-            elif pct >= 100:
-                state["downloading"] = False
-                set_status("AI model ready.")
-            else:
-                set_status(f"First run: downloading the AI model… {pct}%")
-
-        threading.Thread(
-            target=_start_model_download, args=(on_progress,), daemon=True
-        ).start()
-
     def poll() -> None:
         if not state["opened"] and server["ref"] is not None and server["ref"].started:
             state["opened"] = True
             webbrowser.open(url)
-            if not state["downloading"]:
-                set_status("WP TLDR is running.\n\n"
-                           "Your browser should have opened. Keep this window open "
-                           "while you use it, then click Quit when done.")
+            set_status("WP TLDR is running.\n\n"
+                       "Your browser should have opened. Keep this window open "
+                       "while you use it, then click Quit when done.")
         root.after(400, poll)
 
     root.after(400, poll)
     root.mainloop()
-
-
-def _model_exists() -> bool:
-    from backend import local_llm
-
-    return local_llm.model_available()
 
 
 def _run_console() -> None:

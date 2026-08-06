@@ -5,13 +5,8 @@ from backend.config import settings
 
 
 def chat(user: str, system: str = "", json_mode: bool = True) -> str:
-    if not settings.LLM_API_KEY:
-        from backend.local_llm import generate
-
-        return generate(user, system=system, json_mode=json_mode)
-
     client = OpenAI(
-        base_url=settings.LLM_BASE_URL, api_key=settings.LLM_API_KEY, timeout=60
+        base_url=settings.LLM_BASE_URL, api_key=settings.LLM_API_KEY, timeout=120
     )
     messages = []
     if system:
@@ -27,11 +22,7 @@ def chat(user: str, system: str = "", json_mode: bool = True) -> str:
 
 
 def model_name() -> str:
-    if settings.LLM_API_KEY:
-        return settings.LLM_MODEL
-    from backend.local_llm import model_name as _local_name
-
-    return _local_name()
+    return settings.LLM_MODEL
 
 
 if __name__ == "__main__":
@@ -39,12 +30,8 @@ if __name__ == "__main__":
 
     if "--check" in sys.argv:
         if not settings.LLM_API_KEY:
-            from backend.local_llm import model_available, model_name
-
-            print(f"LLM_API_KEY not set — using local model: {model_name()}")
-            if not model_available():
-                print("Model file missing — will download on first use")
-            sys.exit(0)
+            print("No LLM_API_KEY configured (set it in .env or add api_key.txt)")
+            sys.exit(1)
         try:
             r = httpx.get(
                 f"{settings.LLM_BASE_URL}/models",
