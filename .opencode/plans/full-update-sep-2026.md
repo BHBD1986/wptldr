@@ -40,7 +40,7 @@ Findings that shape the work:
 
 - [x] **Docs** — README: broader search scope, bundled YTD briefs, and how users regenerate briefs for custom ranges via OpenRouter (300 cap).
 
-- [ ] **Publish** — commit code + seed DB, `git push origin master`, tag **v0.2.0**, push tag to trigger the installer release build.
+- [x] **Publish** — commit code + seed DB, `git push origin master`, tag **v0.2.0**, push tag to trigger the installer release build.
 
 ## Notes / tradeoffs
 - Env overrides are set per-process only; no secret is written to a committed file, and the app's default OpenRouter behavior is untouched.
