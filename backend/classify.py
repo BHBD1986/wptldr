@@ -6,13 +6,18 @@ from backend.db import get_conn
 from backend.config import settings
 
 
-def run():
+def run(rebuild: bool = False):
     conn = get_conn()
-    rows = conn.execute(
-        """SELECT a.id, a.categories, a.title, a.content_text
-           FROM articles a
-           WHERE a.id NOT IN (SELECT article_id FROM article_topics)"""
-    ).fetchall()
+    if rebuild:
+        conn.execute("DELETE FROM article_topics")
+        conn.commit()
+        query = """SELECT a.id, a.categories, a.title, a.content_text
+                   FROM articles a"""
+    else:
+        query = """SELECT a.id, a.categories, a.title, a.content_text
+                   FROM articles a
+                   WHERE a.id NOT IN (SELECT article_id FROM article_topics)"""
+    rows = conn.execute(query).fetchall()
 
     classified = []
     for row in rows:
@@ -39,4 +44,13 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Clear existing topics and reclassify every article",
+    )
+    args = parser.parse_args()
+    run(rebuild=args.rebuild)

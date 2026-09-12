@@ -49,3 +49,64 @@ def test_run_assigns_unclassified_to_unmatched(monkeypatch, tmp_path):
     rows = conn.execute("SELECT topic FROM article_topics WHERE article_id=1").fetchall()
     conn.close()
     assert [r["topic"] for r in rows] == ["unclassified"]
+
+
+def test_expanded_category_slugs():
+    result = classify(["in-season"], "spring field work is underway")
+    topics = [t for t, _ in result]
+    assert topics[0] == "crops"
+
+
+def test_expanded_crop_keywords():
+    result = classify([], "drought and fusarium hit the wheat crop")
+    topics = [t for t, _ in result]
+    assert "crops" in topics
+
+
+def test_expanded_livestock_keywords():
+    result = classify([], "the cow and calf joined the herd")
+    topics = [t for t, _ in result]
+    assert "livestock" in topics
+
+
+def test_expanded_agtech_keywords():
+    result = classify([], "the farm uses gps and software for data-driven decisions")
+    topics = [t for t, _ in result]
+    assert "agtech" in topics
+
+
+def test_expanded_markets_keywords():
+    result = classify([], "the loonie rallied as commodity prices climbed")
+    topics = [t for t, _ in result]
+    assert "markets" in topics
+
+
+def test_expanded_politics_keywords():
+    result = classify([], "the premier announced a carbon tax policy")
+    topics = [t for t, _ in result]
+    assert "politics" in topics
+
+
+def test_rebuild_reclassifies_existing_articles(monkeypatch, tmp_path):
+    from backend.config import settings
+    monkeypatch.setattr(settings, "DB_PATH", str(tmp_path / "test.db"))
+    from backend.db import init_db, get_conn
+    init_db()
+
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO articles (id, wp_id, title, url, section, published_at, categories, content_text, excerpt, word_count, ingested_at) "
+        "VALUES (1, 1, 'Forecast', 'http://x.com/1', 'weather', '2026-07-01T00:00:00', "
+        "'[\"weather\"]', 'rainfall and moisture levels', 'exc', 10, 'now')"
+    )
+    conn.execute("INSERT INTO article_topics VALUES (1, 'unclassified', 0.0)")
+    conn.commit()
+    conn.close()
+
+    from backend import classify as classify_module
+    classify_module.run(rebuild=True)
+
+    conn = get_conn()
+    rows = conn.execute("SELECT topic FROM article_topics WHERE article_id=1").fetchall()
+    conn.close()
+    assert [r["topic"] for r in rows] == ["crops"]

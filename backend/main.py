@@ -251,8 +251,12 @@ def list_articles(
     params: list = [topic, from_, to]
 
     if q:
-        where.append("a.title LIKE ?")
-        params.append(f"%{q}%")
+        like = f"%{q}%"
+        where.append(
+            "(a.title LIKE ? OR a.content_text LIKE ? "
+            "OR s.tldr LIKE ? OR s.key_points LIKE ? OR a.categories LIKE ?)"
+        )
+        params.extend([like] * 5)
 
     where_clause = " AND ".join(where)
     total = conn.execute(

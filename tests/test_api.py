@@ -68,6 +68,30 @@ def test_article_404(seeded_db):
     assert resp.status_code == 404
 
 
+def test_search_matches_body_not_just_title(seeded_db):
+    client = TestClient(app)
+    resp = client.get("/api/articles?topic=agtech&q=autonomous")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["title"] == "AgTech robot"
+
+    resp = client.get("/api/articles?topic=markets&q=feeder")
+    assert resp.json()["total"] == 1
+
+
+def test_search_matches_summary(seeded_db):
+    client = TestClient(app)
+    resp = client.get("/api/articles?topic=agtech&q=summary")
+    assert resp.status_code == 200
+    assert resp.json()["total"] == 1
+
+
+def test_search_no_match(seeded_db):
+    resp = TestClient(app).get("/api/articles?topic=agtech&q=zzzznotfound")
+    assert resp.json()["total"] == 0
+
+
 def test_import_replaces_database(seeded_db, tmp_path):
     import sqlite3
 

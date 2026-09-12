@@ -3,6 +3,12 @@ import json
 import backend.digest
 
 
+def test_digest_max_items_default_is_300():
+    from backend.config import Settings
+
+    assert Settings.DIGEST_MAX_ITEMS == 300
+
+
 def test_build_prompt_numbering():
     from backend.digest import build_prompt
 

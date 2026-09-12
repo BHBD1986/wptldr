@@ -49,6 +49,8 @@ If your instructor sends a **`.db` data file**, you don't need to touch the app'
 
 This is the fastest way to get fresh data without running an update.
 
+The bundled data also includes **year-to-date Topic Briefs for every category** (AgTech, Livestock, Crops, Markets, Politics, and Unclassified), so you can open the **Topic Brief** button for the current year without generating anything.
+
 ---
 
 ## Developer Setup
@@ -97,6 +99,9 @@ python -m backend.ingest --start 2026-01-01 --end 2026-07-24
 # Classify articles into topics (deterministic, no LLM needed)
 python -m backend.classify
 
+# Reclassify every article from scratch (apply updated rules to existing rows)
+python -m backend.classify --rebuild
+
 # Summarize articles by topic
 python -m backend.summarize --topic agtech --limit 50
 
@@ -128,6 +133,11 @@ For large date ranges the brief is generated in two passes: articles are summari
 batches of `DIGEST_CHUNK_SIZE` (default 40), then the batch digests are merged into the
 final brief, so whole-year ranges work within the local model's context limit.
 
+Bundled **year-to-date briefs** (Jan 1 → present) ship with the app for all six categories.
+When you generate your own brief for a custom date range or topic, the app uses the bundled
+**OpenRouter** key and includes at most `DIGEST_MAX_ITEMS` articles per topic (default 300,
+most recent first). Narrow the date range for more detailed coverage.
+
 ## API Endpoints
 
 | Endpoint | Description |
@@ -148,10 +158,10 @@ final brief, so whole-year ranges work within the local model's context limit.
 ## UI Features
 
 - **Topic pills** — filter by AgTech, Livestock, Crops, Markets, Politics
-- **Date range + search** — scope articles by date and keyword
+- **Date range + search** — scope articles by date and keyword; search matches titles, article text, summaries, key points, and categories
 - **Drill-down** — click an article card to see full summary, key points, related articles; "Go Deeper" for LLM expansion
 - **Update data** — fetch new articles from the Western Producer, re-run classification, and summarize the **currently selected topic** (one topic per run, using the local model or cloud API).
-- **Topic Brief** — generate a one-page LLM-written brief for the active topic and date range, with themes, key stories (clickable), context, and outlook
+- **Topic Brief** — generate a one-page LLM-written brief for the active topic and date range, with themes, key stories (clickable), context, and outlook; year-to-date briefs for every category are bundled with the app
 
 ## Project Layout
 
