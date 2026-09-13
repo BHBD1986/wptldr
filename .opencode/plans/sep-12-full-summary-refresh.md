@@ -32,8 +32,8 @@ copy to seed -> move the `v0.2.2` tag and re-publish.
 - [x] **Verify coverage** — assert `articles LEFT JOIN summaries` = 0, per-topic `articles == summarized`, max `published_at` is a Sep 12 article, and 6 fresh briefs exist.
 - [x] **Ship data** — WAL checkpoint, copy `data/wptldr.db` -> `seed/wptldr.db`, re-verify coverage in the seed.
 - [x] **Tests** — add a test that the summarize coverage pass includes short (`word_count <= 80`) articles; run full `pytest`.
-- [ ] **Re-release v0.2.2** — delete the published `v0.2.2` release, delete local+remote tag, commit data/code, re-tag `v0.2.2` on the new commit, push the tag, let CI build, then publish the new draft as Latest.
-- [ ] **Docs** — note that every bundled article ships with a summary and briefs are current through the release date.
+- [x] **Re-release v0.2.2** — delete the published `v0.2.2` release, delete local+remote tag, commit data/code, re-tag `v0.2.2` on the new commit, push the tag, let CI build, then publish the new draft as Latest.
+- [x] **Docs** — note that every bundled article ships with a summary and briefs are current through the release date.
 
 ## Caveats
 
