@@ -25,7 +25,7 @@ DB is missing/empty (current behavior). Release as v0.2.1.
 - [x] **Wire into launcher** (`backend/launcher.py`) — replace the two `seed_db()` call sites with an `ensure_seed()` that seeds when empty, else syncs when newer, and logs counts. Dev (`not frozen`) stays a no-op.
 - [x] **Keep first-run path** — `seed_db()` still handles the empty/missing case; new DB gets a plain copy.
 - [x] **Tests** (`tests/test_runtime_paths.py`) — newer seed triggers sync; equal/older seed no-op; new articles/summaries appear; existing rows and `expansions` preserved; `.db.bak` created; dev no-op.
-- [ ] **Version + release** — bump defaults in `packaging/WPTLDR.spec`, `packaging/package.py`, `packaging/WPTLDR.iss` to 0.2.1; commit, push, tag v0.2.1, let CI rebuild both platforms.
+- [x] **Version + release** — bump defaults in `packaging/WPTLDR.spec`, `packaging/package.py`, `packaging/WPTLDR.iss` to 0.2.1; commit, push, tag v0.2.1, let CI rebuild both platforms.
 - [x] **Clean stale local build** (`dist/` is gitignored but holds an Aug-6 seed) — rebuild/remove so local packaging cannot ship stale data.
 - [x] **Docs** (`README.md`) — note that upgrading automatically applies newer bundled data and keeps a `.db.bak` backup.
 
