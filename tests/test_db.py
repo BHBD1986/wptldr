@@ -16,4 +16,11 @@ def test_init_db_creates_all_tables(monkeypatch, tmp_path):
     )
     tables = [row[0] for row in cursor.fetchall()]
     conn.close()
-    assert tables == ["article_topics", "articles", "digests", "expansions", "summaries"]
+    assert tables == [
+        "article_topics",
+        "articles",
+        "digests",
+        "expansions",
+        "meta",
+        "summaries",
+    ]

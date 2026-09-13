@@ -72,6 +72,11 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
             created_at TEXT,
             UNIQUE(topic, from_date, to_date)
         );
+
+        CREATE TABLE IF NOT EXISTS meta (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
     """)
     conn.commit()
     if _owns_conn:

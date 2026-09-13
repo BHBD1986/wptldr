@@ -121,6 +121,59 @@ def _backup_db(target: Path) -> None:
         shutil.copy2(target, target.with_suffix(".db.bak"))
 
 
+def _seed_fingerprint(seed: Path) -> str:
+    """Content hash of the bundled seed, used to detect a new dataset."""
+    import hashlib
+
+    digest = hashlib.sha256()
+    with open(seed, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _ensure_meta(conn) -> None:
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)"
+    )
+
+
+def _read_fingerprint(target: Path) -> str | None:
+    """Return the seed fingerprint last applied to this DB, if any."""
+    if not target.exists() or target.stat().st_size == 0:
+        return None
+    try:
+        import sqlite3
+
+        conn = sqlite3.connect(str(target))
+        try:
+            _ensure_meta(conn)
+            row = conn.execute(
+                "SELECT value FROM meta WHERE key='seed_fingerprint'"
+            ).fetchone()
+            return row[0] if row else None
+        finally:
+            conn.close()
+    except Exception:
+        return None
+
+
+def _write_fingerprint(target: Path, value: str) -> None:
+    import sqlite3
+
+    conn = sqlite3.connect(str(target))
+    try:
+        _ensure_meta(conn)
+        conn.execute(
+            "INSERT OR REPLACE INTO meta (key, value) "
+            "VALUES ('seed_fingerprint', ?)",
+            (value,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def seed_db() -> bool:
     """Copy the bundled seed database to the user's app-data dir on first run.
 
@@ -222,19 +275,35 @@ def sync_seed() -> tuple[int, int] | None:
 
 
 def ensure_seed() -> str:
-    """Seed on first run, or merge a newer bundled dataset on upgrade.
+    """Seed on first run, or reconcile the DB with the bundled dataset.
+
+    Runs the merge when the bundled seed fingerprint differs from the one last
+    applied (which repairs installs whose summaries/topics were mis-assigned by
+    older id-keyed merges), or when the bundle is simply newer. The applied
+    fingerprint is recorded so the merge runs at most once per dataset.
 
     Returns a short status string suitable for logging.
     """
     if not is_frozen():
         return "dev"
+    seed = _bundled_seed_path()
     target = db_path()
     if _db_is_empty(target):
-        return "seeded" if seed_db() else "no-seed"
-    if not seed_is_newer(_bundled_seed_path(), target):
+        if not seed_db():
+            return "no-seed"
+        _write_fingerprint(target, _seed_fingerprint(seed))
+        return "seeded"
+    if not seed.exists():
+        return "no-seed"
+
+    fingerprint = _seed_fingerprint(seed)
+    already_applied = _read_fingerprint(target)
+    if already_applied == fingerprint and not seed_is_newer(seed, target):
         return "current"
+
     result = sync_seed()
     if result is None:
-        return "current"
+        return "no-seed"
+    _write_fingerprint(target, fingerprint)
     added_articles, added_summaries = result
     return f"synced (+{added_articles} articles, +{added_summaries} summaries)"

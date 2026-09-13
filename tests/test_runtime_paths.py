@@ -234,8 +234,8 @@ def test_sync_seed_merges_newer_bundle(monkeypatch, tmp_path):
     conn.close()
 
     assert (tmp_path / "wptldr.db.bak").exists()
+    assert rp.ensure_seed().startswith("synced")
     assert rp.ensure_seed() == "current"
-    assert rp.sync_seed() == (0, 0)
 
 
 def test_sync_seed_noop_when_current(monkeypatch, tmp_path):
@@ -245,6 +245,7 @@ def test_sync_seed_noop_when_current(monkeypatch, tmp_path):
     _make_db(seed, [_article(1, "2026-09-11T10:00:00")])
 
     _frozen(tmp_path, monkeypatch, seed)
+    rp._write_fingerprint(target, rp._seed_fingerprint(seed))
     assert rp.ensure_seed() == "current"
     assert not (tmp_path / "wptldr.db.bak").exists()
 
@@ -283,6 +284,7 @@ def test_ensure_seed_current(monkeypatch, tmp_path):
     _make_db(seed, [_article(1, "2026-09-11T10:00:00")])
 
     _frozen(tmp_path, monkeypatch, seed)
+    rp._write_fingerprint(target, rp._seed_fingerprint(seed))
     assert rp.ensure_seed() == "current"
 
 
