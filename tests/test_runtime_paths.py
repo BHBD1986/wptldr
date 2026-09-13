@@ -291,3 +291,92 @@ def test_ensure_seed_current(monkeypatch, tmp_path):
 def test_ensure_seed_noop_in_dev(monkeypatch):
     monkeypatch.setattr(rp, "is_frozen", lambda: False)
     assert rp.ensure_seed() == "dev"
+
+
+def _full_article(article_id, wp_id, title, published_at):
+    return (
+        article_id, wp_id, title, "http://x", "section", published_at,
+        "[]", "body", "excerpt", 100, "2026-01-01",
+    )
+
+
+def test_sync_seed_maps_by_wp_id_with_diverged_ids(monkeypatch, tmp_path):
+    import sqlite3
+
+    seed = tmp_path / "seed.db"
+    target = tmp_path / "wptldr.db"
+    _make_db(
+        seed,
+        [
+            _full_article(1, 1001, "Grain bin entrapment", "2026-09-11T10:00:00"),
+            _full_article(2, 1002, "Autonomous sprayer", "2026-09-10T10:00:00"),
+        ],
+        summaries=[
+            (1, "GRAIN summary", "[]", "w", "m", "t"),
+            (2, "SPRAYER summary", "[]", "w", "m", "t"),
+        ],
+        topics=[(1, "agtech", 1.0), (2, "crops", 1.0)],
+    )
+    # Same wp_ids, but local ids are swapped (as after an out-of-order Update).
+    _make_db(
+        target,
+        [
+            _full_article(1, 1002, "Autonomous sprayer", "2026-09-10T10:00:00"),
+            _full_article(2, 1001, "Grain bin entrapment", "2026-09-11T10:00:00"),
+        ],
+        summaries=[(1, "WRONG", "[]", "w", "m", "t"), (2, "WRONG", "[]", "w", "m", "t")],
+        topics=[(1, "markets", 1.0), (2, "livestock", 1.0)],
+    )
+
+    _frozen(tmp_path, monkeypatch, seed)
+    assert rp.sync_seed() == (0, 0)
+
+    conn = sqlite3.connect(str(target))
+    by_wp = {
+        wp: tldr
+        for wp, tldr in conn.execute(
+            "SELECT a.wp_id, s.tldr FROM articles a "
+            "JOIN summaries s ON s.article_id = a.id"
+        )
+    }
+    assert by_wp[1001] == "GRAIN summary"
+    assert by_wp[1002] == "SPRAYER summary"
+
+    for wp, expected in ((1001, "agtech"), (1002, "crops")):
+        got = [
+            t
+            for (t,) in conn.execute(
+                "SELECT at.topic FROM article_topics at "
+                "JOIN articles a ON a.id = at.article_id WHERE a.wp_id = ?",
+                (wp,),
+            )
+        ]
+        assert got == [expected]
+    conn.close()
+
+
+def test_sync_seed_is_idempotent(monkeypatch, tmp_path):
+    seed = tmp_path / "seed.db"
+    target = tmp_path / "wptldr.db"
+    _make_db(target, [_article(1, "2026-08-06T10:00:00")])
+    _make_db(
+        seed,
+        [_article(1, "2026-08-06T10:00:00"), _article(2, "2026-09-11T10:00:00")],
+        summaries=[(2, "seed 2", "[]", "w", "m", "t")],
+        topics=[(2, "crops", 1.0)],
+    )
+
+    _frozen(tmp_path, monkeypatch, seed)
+    assert rp.sync_seed() == (1, 1)
+    assert rp.sync_seed() == (0, 0)
+
+
+def test_ensure_seed_runs_once_per_fingerprint(monkeypatch, tmp_path):
+    seed = tmp_path / "seed.db"
+    target = tmp_path / "wptldr.db"
+    _make_db(target, [_article(1, "2026-09-11T10:00:00")])
+    _make_db(seed, [_article(1, "2026-09-11T10:00:00")])
+
+    _frozen(tmp_path, monkeypatch, seed)
+    assert rp.ensure_seed().startswith("synced")
+    assert rp.ensure_seed() == "current"
