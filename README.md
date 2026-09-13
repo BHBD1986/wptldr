@@ -49,7 +49,7 @@ If your instructor sends a **`.db` data file**, you don't need to touch the app'
 
 This is the fastest way to get fresh data without running an update.
 
-The bundled data also includes **year-to-date Topic Briefs for every category** (AgTech, Livestock, Crops, Markets, Politics, and Unclassified), so you can open the **Topic Brief** button for the current year without generating anything.
+Every bundled article ships with a summary — including short pieces — and the data includes **year-to-date Topic Briefs for every category** (AgTech, Livestock, Crops, Markets, Politics, and Unclassified), refreshed through the release date. You can open the **Topic Brief** button for the current year without generating anything.
 
 ---
 
@@ -108,6 +108,9 @@ python -m backend.summarize --topic agtech --limit 50
 # Summarize other topics as needed
 python -m backend.summarize --topic livestock --limit 50
 python -m backend.summarize --topic crops --limit 50
+
+# Guarantee coverage: summarize every article missing a summary (all topics)
+python -m backend.summarize --all --limit 500
 
 # Update pipeline: fetch new articles since last ingest, classify, summarize (all topics)
 python -m backend.update
