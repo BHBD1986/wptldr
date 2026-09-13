@@ -37,7 +37,8 @@ The app ships as a pre-built desktop app. You do **not** need Python, Node, or a
 
 - A browser tab opens at the app's local address (e.g. `http://127.0.0.1:PORT`) — that's the app UI.
 - The small status window stays open while the app runs; use its **Quit** button to close the app (or quit from the taskbar/status menu).
-- Updating: when a new release is posted, download the new installer and run it. On launch the app **merges any newer bundled articles and summaries** into your database (your previous database is saved first as `wptldr.db.bak`), so your saved data is kept and the latest summaries appear automatically.
+- Updating: when a new release is posted, download the new installer and run it. On launch the app **reconciles your database with the bundled data**, matching articles by their WordPress ID (not by a local row number) so summaries and topics always stay attached to the right story. Previously mismatched articles are repaired automatically, and your old database is saved first as `wptldr.db.bak`.
+- If an older install shows the wrong summary under a headline, install the latest release and launch it once to repair; or use **Import data** with a fresh `.db`; or quit and delete `wptldr.db` from the app-data folder (`%LOCALAPPDATA%\WPTLDR` on Windows, `~/Library/Application Support/WPTLDR` on Mac) so it re-seeds on next launch.
 
 ### Getting updated data (no API needed)
 
