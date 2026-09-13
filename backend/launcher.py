@@ -14,7 +14,7 @@ import webbrowser
 import uvicorn
 
 from backend.main import app as fastapi_app
-from backend.runtime_paths import app_data_dir, configure_settings, seed_db
+from backend.runtime_paths import app_data_dir, configure_settings, ensure_seed
 
 logger = logging.getLogger("wptldr")
 
@@ -76,8 +76,7 @@ def _run_tk() -> None:
     _ensure_stdio()
     _setup_logging()
     configure_settings()
-    if seed_db():
-        logger.info("seeded app-data DB from bundled 2026 dataset")
+    logger.info("seed status: %s", ensure_seed())
     port = resolve_port()
     url = f"http://127.0.0.1:{port}"
 
@@ -141,8 +140,7 @@ def _run_console() -> None:
     """Fallback when tkinter is unavailable (dev/headless)."""
     _ensure_stdio()
     configure_settings()
-    if seed_db():
-        print("seeded app-data DB from bundled 2026 dataset")
+    print(f"seed status: {ensure_seed()}")
     port = resolve_port()
     url = f"http://127.0.0.1:{port}"
     print(f"WP TLDR running at {url} — press Ctrl+C to stop.")
