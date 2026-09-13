@@ -54,7 +54,7 @@ def _find_iscc() -> Path | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.2.2")
+    parser.add_argument("--version", default="0.2.3")
     args = parser.parse_args()
     version = args.version
 
