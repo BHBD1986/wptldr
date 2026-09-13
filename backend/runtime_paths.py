@@ -50,30 +50,37 @@ def _db_is_empty(path: Path) -> bool:
     return _db_fingerprint(path)[1] == 0
 
 
-def _db_fingerprint(path: Path) -> tuple[str | None, int]:
-    """Return (newest published_at, article count) for a DB.
+def _db_fingerprint(path: Path) -> tuple[str | None, int, int]:
+    """Return (newest published_at, article count, summary count) for a DB.
 
-    Falls back to (None, 0) when the file is missing, empty, or unreadable.
+    Falls back to (None, 0, 0) when the file is missing, empty, or unreadable.
     """
     if not path.exists() or path.stat().st_size == 0:
-        return None, 0
+        return None, 0, 0
     try:
         import sqlite3
 
         conn = sqlite3.connect(str(path))
         try:
             try:
-                row = conn.execute(
-                    "SELECT MAX(published_at), COUNT(*) FROM articles"
-                ).fetchone()
-                return (row[0], row[1] or 0)
+                articles = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
             except sqlite3.Error:
-                count = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
-                return (None, count or 0)
+                articles = 0
+            try:
+                max_date = conn.execute(
+                    "SELECT MAX(published_at) FROM articles"
+                ).fetchone()[0]
+            except sqlite3.Error:
+                max_date = None
+            try:
+                summaries = conn.execute("SELECT COUNT(*) FROM summaries").fetchone()[0]
+            except sqlite3.Error:
+                summaries = 0
+            return (max_date, articles or 0, summaries or 0)
         finally:
             conn.close()
     except Exception:
-        return None, 0
+        return None, 0, 0
 
 
 def seed_max_date(path: Path) -> str | None:
@@ -82,22 +89,27 @@ def seed_max_date(path: Path) -> str | None:
 
 
 def seed_is_newer(seed: Path, target: Path) -> bool:
-    """True when the bundled seed holds more recent articles than target.
+    """True when the bundled seed holds newer data than the target DB.
 
-    Compares newest article dates; falls back to article count when either
-    side has no usable dates.
+    Triggers on a newer newest-article date, more articles, or more summaries,
+    so upgrades also deliver summaries added to the bundle since last install.
     """
     if not seed.exists():
         return False
-    seed_date, seed_count = _db_fingerprint(seed)
-    if seed_count == 0:
+    seed_date, seed_articles, seed_summaries = _db_fingerprint(seed)
+    if seed_articles == 0:
         return False
-    target_date, target_count = _db_fingerprint(target)
-    if target_count == 0:
+    target_date, target_articles, target_summaries = _db_fingerprint(target)
+    if target_articles == 0:
         return True
     if seed_date and target_date:
-        return seed_date > target_date
-    return seed_count > target_count
+        if seed_date != target_date:
+            return seed_date > target_date
+    elif seed_date and not target_date:
+        return True
+    if seed_articles > target_articles:
+        return True
+    return seed_summaries > target_summaries
 
 
 def _bundled_seed_path() -> Path:

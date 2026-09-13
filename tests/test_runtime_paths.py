@@ -154,6 +154,40 @@ def test_seed_is_newer_compares_dates(monkeypatch, tmp_path):
     assert rp.seed_is_newer(tmp_path / "missing.db", old) is False
 
 
+def test_seed_is_newer_detects_added_summaries(monkeypatch, tmp_path):
+    seed = tmp_path / "seed.db"
+    target = tmp_path / "wptldr.db"
+    _make_db(target, [_article(1, "2026-09-11T10:00:00")])
+    _make_db(
+        seed,
+        [_article(1, "2026-09-11T10:00:00")],
+        summaries=[(1, "seed summary", "kp", "why", "m", "t")],
+    )
+
+    assert rp.seed_is_newer(seed, target) is True
+    assert rp.seed_is_newer(target, seed) is False
+
+
+def test_sync_seed_adds_missing_summaries(monkeypatch, tmp_path):
+    import sqlite3
+
+    seed = tmp_path / "seed.db"
+    target = tmp_path / "wptldr.db"
+    _make_db(target, [_article(1, "2026-09-11T10:00:00")])
+    _make_db(
+        seed,
+        [_article(1, "2026-09-11T10:00:00")],
+        summaries=[(1, "seed summary", "kp", "why", "m", "t")],
+    )
+
+    _frozen(tmp_path, monkeypatch, seed)
+    assert rp.ensure_seed().startswith("synced")
+
+    conn = sqlite3.connect(str(target))
+    assert conn.execute("SELECT COUNT(*) FROM summaries").fetchone()[0] == 1
+    conn.close()
+
+
 def test_sync_seed_merges_newer_bundle(monkeypatch, tmp_path):
     import sqlite3
 
