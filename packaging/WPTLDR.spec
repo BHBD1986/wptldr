@@ -17,7 +17,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 root = Path(SPECPATH).resolve().parents[0]
 
-app_version = os.environ.get("WPTLDR_VERSION", "0.2.1")
+app_version = os.environ.get("WPTLDR_VERSION", "0.2.2")
 
 datas = [(str(root / "frontend"), "frontend")]
 datas.append((str(root / "seed" / "wptldr.db"), "seed"))
