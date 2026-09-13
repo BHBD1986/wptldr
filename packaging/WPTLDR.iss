@@ -3,7 +3,7 @@
 ; Requires the PyInstaller onedir build at dist\WPTLDR.
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2.0"
+  #define MyAppVersion "0.2.1"
 #endif
 
 #define MyAppName "WP TLDR"
