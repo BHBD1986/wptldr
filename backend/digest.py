@@ -208,15 +208,31 @@ def generate_digest(topic: str, from_: str, to: str, force: bool = False, dry_ru
         conn.close()
         return {"digest": data, "item_count": len(items), "cached": False, "_dry": True}
 
-    for story in data.get("key_stories", []):
+    key_stories = []
+    raw_stories = data.get("key_stories")
+    if not isinstance(raw_stories, list):
+        raw_stories = []
+    for story in raw_stories:
         if not isinstance(story, dict):
             continue
         ref = story.get("ref")
-        if ref and 1 <= ref <= len(items):
-            item = items[ref - 1]
-            story["article_id"] = item["id"]
-            story["url"] = ""  # URLs aren't fetched; article_id is sufficient for frontend
-            story["title"] = item["title"]
+        try:
+            ref = int(ref)
+        except (TypeError, ValueError):
+            continue
+        if not 1 <= ref <= len(items):
+            continue
+        item = items[ref - 1]
+        key_stories.append(
+            {
+                "ref": ref,
+                "article_id": item["id"],
+                "url": "",
+                "title": item["title"],
+                "why": story.get("why", ""),
+            }
+        )
+    data["key_stories"] = key_stories
 
     conn.execute(
         "INSERT OR REPLACE INTO digests (topic, from_date, to_date, content, item_count, model, created_at) "
