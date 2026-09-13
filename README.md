@@ -37,7 +37,7 @@ The app ships as a pre-built desktop app. You do **not** need Python, Node, or a
 
 - A browser tab opens at the app's local address (e.g. `http://127.0.0.1:PORT`) — that's the app UI.
 - The small status window stays open while the app runs; use its **Quit** button to close the app (or quit from the taskbar/status menu).
-- Updating: when a new release is posted, download the new installer and run it — your saved data is kept.
+- Updating: when a new release is posted, download the new installer and run it. On launch the app **merges any newer bundled articles and summaries** into your database (your previous database is saved first as `wptldr.db.bak`), so your saved data is kept and the latest summaries appear automatically.
 
 ### Getting updated data (no API needed)
 
