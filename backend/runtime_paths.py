@@ -141,11 +141,16 @@ def seed_db() -> bool:
 
 
 def sync_seed() -> tuple[int, int] | None:
-    """Merge a newer bundled dataset into an existing user DB.
+    """Merge the bundled dataset into an existing user DB, keyed on ``wp_id``.
 
-    Only runs when the bundled seed's newest article is newer than the user's.
-    Articles/topics/new rows are added, bundled summaries replace older ones,
-    and user-generated tables (``expansions``) are left untouched. Returns
+    The local autoincrement ``id`` is never used as the join key: on installs
+    whose id numbering differs from the bundle's (e.g. after the app's Update
+    fetched articles in another order), joining on ``id`` attaches summaries
+    and topics to the wrong articles. Here every bundled row is matched to the
+    target by its stable WordPress id.
+
+    Articles present in the bundle are reconciled to the bundled summaries and
+    topics; user-only articles and ``expansions`` are left untouched. Returns
     ``(articles_added, summaries_added)`` or ``None`` when nothing was done.
     """
     if not is_frozen():
@@ -153,8 +158,6 @@ def sync_seed() -> tuple[int, int] | None:
     target = db_path()
     seed = _bundled_seed_path()
     if not seed.exists() or not target.exists():
-        return None
-    if not seed_is_newer(seed, target):
         return None
 
     _backup_db(target)
@@ -165,29 +168,50 @@ def sync_seed() -> tuple[int, int] | None:
         conn.execute("ATTACH DATABASE ? AS seed", (str(seed),))
         before_articles = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
         before_summaries = conn.execute("SELECT COUNT(*) FROM summaries").fetchone()[0]
-        conn.executescript(
-            """
-            INSERT OR IGNORE INTO articles
-                (id, wp_id, title, url, section, published_at, categories,
-                 content_text, excerpt, word_count, ingested_at)
-                SELECT id, wp_id, title, url, section, published_at, categories,
-                       content_text, excerpt, word_count, ingested_at
-                FROM seed.articles;
 
-            INSERT OR IGNORE INTO article_topics (article_id, topic, score)
-                SELECT article_id, topic, score FROM seed.article_topics;
-
-            INSERT OR REPLACE INTO summaries
-                (article_id, tldr, key_points, why_it_matters, model, created_at)
-                SELECT article_id, tldr, key_points, why_it_matters, model, created_at
-                FROM seed.summaries;
-
-            INSERT OR IGNORE INTO digests
-                (topic, from_date, to_date, content, item_count, model, created_at)
-                SELECT topic, from_date, to_date, content, item_count, model,
-                       created_at
-                FROM seed.digests;
-            """
+        # 1. Add articles missing from the target, matched on wp_id. Omitting
+        #    the local id lets SQLite assign a fresh one, so a numerically
+        #    colliding row can never shadow a different article.
+        conn.execute(
+            """INSERT OR IGNORE INTO articles
+               (wp_id, title, url, section, published_at, categories,
+                content_text, excerpt, word_count, ingested_at)
+               SELECT wp_id, title, url, section, published_at, categories,
+                      content_text, excerpt, word_count, ingested_at
+               FROM seed.articles"""
+        )
+        # 2. Rebuild topics for every bundled article, mapped wp_id -> target
+        #    id. Deleting first removes any previously mis-assigned rows.
+        conn.execute(
+            """DELETE FROM article_topics
+               WHERE article_id IN (
+                   SELECT ta.id FROM articles ta
+                   JOIN seed.articles sa ON sa.wp_id = ta.wp_id)"""
+        )
+        conn.execute(
+            """INSERT OR REPLACE INTO article_topics (article_id, topic, score)
+               SELECT ta.id, st.topic, st.score
+               FROM seed.article_topics st
+               JOIN seed.articles sa ON sa.id = st.article_id
+               JOIN articles ta ON ta.wp_id = sa.wp_id"""
+        )
+        # 3. Bundled summaries for bundled articles, mapped by wp_id.
+        conn.execute(
+            """INSERT OR REPLACE INTO summaries
+               (article_id, tldr, key_points, why_it_matters, model, created_at)
+               SELECT ta.id, s.tldr, s.key_points, s.why_it_matters,
+                      s.model, s.created_at
+               FROM seed.summaries s
+               JOIN seed.articles sa ON sa.id = s.article_id
+               JOIN articles ta ON ta.wp_id = sa.wp_id"""
+        )
+        # 4. Bundled briefs win over any stale local copy.
+        conn.execute(
+            """INSERT OR REPLACE INTO digests
+               (topic, from_date, to_date, content, item_count, model, created_at)
+               SELECT topic, from_date, to_date, content, item_count, model,
+                      created_at
+               FROM seed.digests"""
         )
         conn.commit()
         after_articles = conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
@@ -204,8 +228,11 @@ def ensure_seed() -> str:
     """
     if not is_frozen():
         return "dev"
-    if _db_is_empty(db_path()):
+    target = db_path()
+    if _db_is_empty(target):
         return "seeded" if seed_db() else "no-seed"
+    if not seed_is_newer(_bundled_seed_path(), target):
+        return "current"
     result = sync_seed()
     if result is None:
         return "current"
