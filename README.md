@@ -25,14 +25,17 @@ The app ships as a pre-built desktop app. You do **not** need Python, Node, or a
 
 **Zip fallback** (if you used the `.zip` in step 3): right-click the zip → **Extract All**, open the extracted `WPTLDR` folder, and double-click `WPTLDR.exe`. First launch is the same as step 8.
 
-### Mac
+## Mac
 
 1. Go to https://github.com/BHBD1986/wptldr
-2. On the right side of the page, click **Releases** (under "About"). If a box showing "Latest release" appears, click it instead.
-3. Find the latest release. Under **Assets**, click **`WPTLDR-macos-arm64-vX.X.X.zip`** to download it. (This build is for Apple Silicon M-series Macs.)
-4. Double-click the downloaded `.zip` to unzip it — a **`WPTLDR.app`** icon appears.
-5. Drag **`WPTLDR.app`** into your **Applications** folder.
-6. **First open:** right-click (or Ctrl-click) **`WPTLDR.app`** in Applications → **Open** → click **Open** in the dialog. (This is the one-time Gatekeeper bypass — the app isn't notarized yet. After this, normal double-click works.)
+2. On the right side of the page, click **Releases** (under "About"). If a box showing **Latest release** appears, click it instead.
+3. Find the latest release. Under **Assets**, click `WPTLDR-macos-arm64-vX.X.X.zip` to download it. *(This build is for Apple Silicon M-series Macs.)*
+
+   > **Safari users:** Safari may automatically unzip the file and move the original `.zip` to the Trash. This is normal — **the download did not fail**. The extracted `WPTLDR.app` will appear in your Downloads folder. If you want to keep the `.zip`, go to **Safari → Settings → General** and uncheck **"Open 'safe' files after downloading"** *before* downloading.
+
+4. Double-click the downloaded `.zip` to unzip it — a `WPTLDR.app` icon appears. *(If Safari already unzipped it, skip this step.)*
+5. Drag `WPTLDR.app` into your **Applications** folder.
+6. First open: right-click (or Ctrl-click) `WPTLDR.app` in Applications → **Open** → click **Open** in the dialog. *(This is the one-time Gatekeeper bypass — the app isn't notarized yet[citation:4]. After this, normal double-click works.)*
 7. Launch the app by double-clicking **WP TLDR** in Applications.
 8. A small status window opens — your browser opens on its own once the app is ready.
 
