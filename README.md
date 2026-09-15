@@ -8,19 +8,22 @@ Ingests Western Producer articles via the [WordPress REST API](https://www.produ
 
 The app ships as a pre-built desktop app. You do **not** need Python, Node, or any developer tools. Steps below take you from the GitHub page to a running app.
 
-### Windows (PC)
+## Windows (PC)
 
 1. Go to https://github.com/BHBD1986/wptldr
-2. On the right side of the page, click **Releases** (under "About"). If a box showing "Latest release" appears, click it instead.
-3. Find the latest release. Under **Assets**, click **`WPTLDR-Setup-vX.X.X.exe`** to download it.
-   - No `.exe` in the list? Download **`WPTLDR-windows-x64-vX.X.X.zip`** instead and skip to step 8.
+2. On the right side of the page, click **Releases** (under "About"). If a box showing **Latest release** appears, click it instead.
+3. Find the latest release. Under **Assets**, click `WPTLDR-Setup-vX.X.X.exe` to download it.
+   > **Edge users only:** If Edge blocks the download, click **More info** or the download icon, then choose **Keep** / **Keep anyway**. If that doesn't work, go to `edge://settings/content/insecureContent` and add                    `github.com` to the **Allow** list.
+      > - Download the file, and when you get the warning, click **Keep**.
+      > - Click the down caret on the **Delete** button and choose **Keep anyway**.
+   *No `.exe` in the list?* Download `WPTLDR-windows-x64-vX.X.X.zip` instead and skip to step 8.
 4. Double-click the downloaded `WPTLDR-Setup-vX.X.X.exe` file.
-5. Windows SmartScreen may show a blue "Windows protected your PC" warning. Click **More info**, then **Run anyway**. (This is a one-time step — the app isn't code-signed yet.)
-6. Follow the installer wizard: accept the default folder and click **Next** → **Install**. It adds a **Start-menu entry** and a **Desktop shortcut**.
+5. Windows SmartScreen may show a blue **"Windows protected your PC"** warning. Click **More info**, then **Run anyway**. *(This is a one-time step — the app isn't code-signed yet.)*
+6. Follow the installer wizard: accept the default folder and click **Next → Install**. It adds a Start-menu entry and a Desktop shortcut.
 7. Launch the app by double-clicking the **WP TLDR** desktop shortcut (or the Start-menu entry).
 8. A small status window opens — your browser opens on its own once the app is ready.
 
-**Zip fallback (if you used the `.zip` in step 3):** right-click the zip → **Extract All**, open the extracted `WPTLDR` folder, and double-click **`WPTLDR.exe`**. First launch is the same as step 8.
+**Zip fallback** (if you used the `.zip` in step 3): right-click the zip → **Extract All**, open the extracted `WPTLDR` folder, and double-click `WPTLDR.exe`. First launch is the same as step 8.
 
 ### Mac
 
